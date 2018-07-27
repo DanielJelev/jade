@@ -32,10 +32,12 @@ var Component = (function(){
 
     Component.prototype.config = function(){
         this.setTemplate();
-        this.componentClass(this.scope);
 
         var templateEngine = new TemplateEngine(this.scope);
-        templateEngine.config();
+        var scope = templateEngine.configScope();
+
+        this.componentClass(scope);
+
     }
 
     return Component;
