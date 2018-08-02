@@ -106,6 +106,7 @@ var Component = (function () {
         this.template = options.template;
         this.componentClass = options.componentClass;
         this.services = options.services;
+        this.servicesClasses = [];
         this.scope = {}
     }
 
@@ -123,27 +124,61 @@ var Component = (function () {
     }
 
     Component.prototype.setTemplateUrl = function () {
-        // var element = document.getElementsByTagName(this.selector);
-        // var file = new File(this.templateUrl);
-        // var html = this.reader.readAsText(file)
-        // element.innerHtml = html;
+
     }
 
     Component.prototype.injectServices = function (services) {
-        this.services = services;
+        this.servicesClasses = services;
     }
 
     Component.prototype.config = function () {
-        this.setTemplate();
+        if (this.templateUrl) {
+            var that = this;
+            this.loadTemplateUrl().then(function (template) {
+                that.template = template;
+                that.setTemplate();
+                that.setUpComponent();
+            });
+        } else {
+            this.setTemplate();
+            this.setUpComponent();
+        }
+
+    }
+
+    Component.prototype.setUpComponent = function () {
         this.scope = {}
 
         var viewEngine = new ViewEngine(this.scope);
         var scope = viewEngine.configScope();
 
         var componentArgs = [scope]
-        componentArgs = componentArgs.concat(this.services)
+        componentArgs = componentArgs.concat(this.servicesClasses)
 
         this.componentClass.apply(null, componentArgs)
+    }
+
+    Component.prototype.loadTemplateUrl = function (e) {
+        var that = this;
+        return new Promise(function (resolve, reject) {
+            var req = new XMLHttpRequest();
+            req.open('GET', that.templateUrl);
+
+            req.onload = function () {
+                if (req.status == 200) {
+                    resolve(req.response);
+                }
+                else {
+                    reject(Error(req.statusText));
+                }
+            };
+
+            req.onerror = function () {
+                reject(Error("Network Error"));
+            };
+
+            req.send();
+        });
     }
 
     return Component;
@@ -177,7 +212,6 @@ var Jade = (function () {
 
     Jade.prototype.configComponent = function () {
         var route = this.getCurrentRoute();
-        this.renderComponent();
 
         if (route && this.currentRoute != route.path) {
 
