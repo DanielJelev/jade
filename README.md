@@ -48,6 +48,16 @@ function HomeComponent(scope, HomeService) {
     scope.pageHeader = pageHeader;
 };
 ```
+# Load templateUrl and template
+```javascript
+template:'<h1 jmodel="pageHeader"></h1>'
+```
+> **You can render HTML directly in the component using template OR...**
+```javascript
+templateUrl:'app/components/home.component.html'
+```
+>**You can use templateUrl to load static html file and render it.**
+
 # What is scope object?
 > **scope object is the communication between component and tempalte/view html. You can easly assign values to this object and display it on page. Scope object is two way binding object which observe the state of the assigned objects on it and update the values in models.**
 ```javascript
