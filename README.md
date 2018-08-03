@@ -66,6 +66,45 @@ function HomeComponent(scope, HomeService) {
     scope.pageHeader = pageHeader;
 };
 ```
+# Visualisation
+# -- jfor
+> **We can easly render collections using jfor html helper**
+```javascript
+function UserComponent(scope) {
+    scope.users = [{
+        firstName : "John",
+        lastName : "Mannuel"
+    },
+    {
+        firstName  : "Peter",
+        lastName : 'Peterson'
+    },
+    {
+        firstName  : "Abby",
+        lastName : "Simpson"
+    }];
+};
+```
+```html
+<div jfor="users">
+    <div>{users.firstName}</div>
+    <div>{users.lastName}</div>
+    <hr>
+</div>
+```
+# -- jvm
+> **jvm html helper is using for representing of view model - j view model**
+```html
+<div jvm="user">
+    {user.name}
+    {user.id}
+</div>
+```
+> **You can easly use it for single object or...**
+```html
+<div jvm="title">{title}</div>
+```
+> **You can use it for single property like scope.title = "Page Title"**.
 # What is jmodel and jbind and how to use it?
 >  **jmodel** creating properies which we use to store information via html and use it in our component.
  ```html
@@ -121,7 +160,6 @@ var app = app || {};
 # In development 
 
 - Implement support of more modules
-- Implement more html helpers
 
 
 ### Development
