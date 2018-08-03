@@ -92,6 +92,7 @@ function UserComponent(scope) {
     <hr>
 </div>
 ```
+
 # -- jvm
 > **jvm html helper is using for representing of view model - j view model**
 ```html
@@ -105,6 +106,19 @@ function UserComponent(scope) {
 <div jvm="title">{title}</div>
 ```
 > **You can use it for single property like scope.title = "Page Title"**.
+# -- jif
+> **jif html helperer allow us to build logical operations over html elements like standart if staitment-**
+```html
+<div jif="users.length == 0">
+   <h1> No users to display <h1/>
+</div>
+
+<div jif="users.length > 0">
+   <h1> Users list </h1>
+   <p>{users.firstName}</p>
+   <p>{users.lastName}</p>
+</div>
+```
 # What is jmodel and jbind and how to use it?
 >  **jmodel** creating properies which we use to store information via html and use it in our component.
  ```html
@@ -160,6 +174,7 @@ var app = app || {};
 # In development 
 
 - Implement support of more modules
+- Implement more html helpers
 
 
 ### Development
