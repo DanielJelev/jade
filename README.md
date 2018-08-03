@@ -110,7 +110,7 @@ function UserComponent(scope) {
 > **jif html helperer allow us to build logical operations over html elements like standart if staitment-**
 ```html
 <div jif="users.length == 0">
-   <h1> No users to display <h1/>
+   <h1> No users to display </h1>
 </div>
 
 <div jif="users.length > 0">
