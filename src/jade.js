@@ -1,4 +1,3 @@
-
 var Router = (function () {
 
     function Router(routes) {
@@ -34,10 +33,7 @@ var Route = (function () {
     }
 
     Route.prototype.setRouteParams = function () {
-
         console.log();
-
-
     }
 
     Route.prototype.getBasePath = function () {
@@ -95,7 +91,7 @@ var ViewEngine = (function () {
         for (var el of this.ifStatemetnsElements) {
             var propName = el.getAttribute('jif');
             this.setPropUpdateLogic(propName);
-            
+
         }
 
         return this.scope;
@@ -174,7 +170,6 @@ var ViewEngine = (function () {
         // Set object values or normal value and repeat html
         for (var el of this.viewModelElements) {
             if (el.getAttribute('jvm') === prop) {
-                debugger
                 if (typeof newValue === 'object') {
                     var templateRow = el.innerHTML;
                     for (var i in newValue) {
@@ -214,23 +209,22 @@ var ViewEngine = (function () {
             }
         }
 
-        function getScopePropertyFromExpression(expression){
+        function getScopePropertyFromExpression(expression) {
             var properties = [];
-            for(var i in that.scope){
-                if(expression.indexOf(i) > -1 && expression != i){
-                   properties.push(i)
+            for (var i in that.scope) {
+                if (expression.indexOf(i) > -1 && expression != i) {
+                    properties.push(i)
                 }
             }
 
             return properties;
         }
 
-        function replaceExpression(properties, expression){
+        function replaceExpression(properties, expression) {
 
-            for (var i in properties){
-                debugger
+            for (var i in properties) {
                 var currentProp = properties[i];
-                expression = expression.replace(currentProp,"that.scope."+currentProp)
+                expression = expression.replace(currentProp, "that.scope." + currentProp)
             }
 
             return expression;
@@ -251,10 +245,11 @@ var Component = (function () {
         this.services = options.services;
         this.servicesClasses = [];
         this.scope = {}
+        this.rootSelector;
     }
 
     Component.prototype.setTemplate = function () {
-        var element = document.getElementsByTagName(app.selector)[0];
+        var element = document.getElementsByTagName(this.rootSelector)[0];
 
         if (this.selector) {
             var template = document.createElement(this.selector);
@@ -357,7 +352,7 @@ var Jade = (function () {
             this.currentRoute = route.path;
             var component = this.getCurrentComponentByName(route.component);
             this.injectServices(component);
-
+            component.rootSelector = this.selector;
             component.config();
         }
     }
