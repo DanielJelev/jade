@@ -37,7 +37,7 @@ var app = app || {};
 // Creating new Component
 app.component("HomeComponent", {
     selector: "home-component",
-    template:'<h1 jmodel="pageHeader"></h1>',
+    template:'<h1 jvm="pageHeader"></h1>',
     services: ["HomeService"],
     componentClass: HomeComponent,
 });
