@@ -37,7 +37,7 @@ var app = app || {};
 // Creating new Component
 app.component("HomeComponent", {
     selector: "home-component",
-    template:'<h1 jvm="pageHeader"></h1>',
+    template:'<h1 jmodel="pageHeader"></h1>',
     services: ["HomeService"],
     componentClass: HomeComponent,
 });
@@ -110,7 +110,7 @@ function UserComponent(scope) {
 > **jif html helperer allow us to build logical operations over html elements like standart if staitment-**
 ```html
 <div jif="users.length == 0">
-   <h1> No users to display </h1>
+   <h1> No users to display <h1/>
 </div>
 
 <div jif="users.length > 0">
@@ -158,7 +158,7 @@ var app = app || {};
 (function(){
     var baseUrl = "http:\\localhost:4200"
     var appRoutes = [{
-            url : baseUrl + "#home",
+            url : baseUrl + "#/home",
             component : "HomeComponent"
         }
     ];
@@ -170,7 +170,35 @@ var app = app || {};
     
 }(app));
 ```
+# Working with route with query params 
+```javascript
+var app = app || {};
+(function(){
+    var baseUrl = "http:\\localhost:4200"
+    var appRoutes = [ {
+            url : baseUrl + "#/details/?id",
+            component : "DetailsComponent"
+        }
+    ];
+    var router = new Router(appRoutes);
+    app = new Jade({
+        selector : "my-app",
+        router : router
+    });
+}(app));
+```
+> **Everything after "?" char is query and will be replaced with url value
+Example http://localhost:4200/#/details/1**
 
+# How to get and work with url params?
+```javascript
+app.component("DetailsComponent",{...
+})
+function DetailsComponent(scope, UserService){
+    var id = app.router.params["id"];
+    scope.user = UserService.getById(id);
+}
+```
 # In development 
 
 - Implement support of more modules
