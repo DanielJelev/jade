@@ -1,6 +1,6 @@
 {
   "_from": "jadejs",
-  "_id": "jadejs@1.0.1",
+  "_id": "jadejs@1.0.2",
   "_inBundle": false,
   "_integrity": "sha512-9jFLDAlrlSHwf9ITJPnWjuAdlvfooZrrCDs56ZNq+gkOrtnZWHEWwGmxCpIIut/Uebd465Y+uAHTsYn8zZWuKg==",
   "_location": "/jadejs",
@@ -38,5 +38,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "1.0.1"
+  "version": "1.0.2"
 }

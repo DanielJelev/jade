@@ -20,10 +20,10 @@ var Router = (function () {
         this.currentRoute = route;
     }
 
-    Router.prototype.setParams = function(){
+    Router.prototype.setParams = function(prefix){
         var parts = location.hash.split('/')
-        var id = parts[parts.length -1]
-        this.params.id = parseInt(id);
+        var query = parts[parts.length -1]
+        this.params[prefix] = parseInt(query);
     }
 
     return Router;
@@ -44,11 +44,17 @@ var Route = (function () {
     }
 
     Route.prototype.setBasePath = function (params) {
-        var prefix = this.path.split("?");
-        prefix = prefix[prefix.length-1];
-        var newPath = this.path.replace("?"+prefix,params.id);
+        var prefix = this.getRoutePrefix();
+        var newPath = this.path.replace("?"+prefix,params[prefix]);
         this.path = newPath;
     }
+
+    Route.prototype.getRoutePrefix = function(){
+        var prefix = this.path.split("?");
+        prefix = prefix[prefix.length-1];
+        return prefix; 
+    }
+
     return Route;
 
 }());
@@ -384,7 +390,8 @@ var Jade = (function () {
         var route = this.router.routes.filter(function (r) {
             var isRouteHaveParam = r.checkForParam();
             if (isRouteHaveParam) {
-                that.router.setParams(route);
+                var prefix = r.getRoutePrefix();
+                that.router.setParams(prefix);
                 r.setBasePath(that.router.params);
             }
             return location.href == r.path
