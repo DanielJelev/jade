@@ -2,7 +2,9 @@ var Router = (function () {
 
     function Router(routes) {
         this.routes = [];
-        this.config(routes);
+        this.currentRoute = null;
+        this.params = {};
+        this.config(routes)
     }
 
     Router.prototype.config = function (routerConfig) {
@@ -12,6 +14,16 @@ var Router = (function () {
                 routerConfig[r].component
             ));
         }
+    }
+
+    Router.prototype.setCurrentRoute = function(route){
+        this.currentRoute = route;
+    }
+
+    Router.prototype.setParams = function(){
+        var parts = location.hash.split('/')
+        var id = parts[parts.length -1]
+        this.params.id = parseInt(id);
     }
 
     return Router;
@@ -26,18 +38,16 @@ var Route = (function () {
     }
 
     Route.prototype.checkForParam = function () {
-        if (this.path.indexOf(":") > -1) {
-            this.setRouteParams();
+        if (this.path.indexOf("?") > -1) {
             return true;
         }
     }
 
-    Route.prototype.setRouteParams = function () {
-        console.log();
-    }
-
-    Route.prototype.getBasePath = function () {
-        return this.path
+    Route.prototype.setBasePath = function (params) {
+        var prefix = this.path.split("?");
+        prefix = prefix[prefix.length-1];
+        var newPath = this.path.replace("?"+prefix,params.id);
+        this.path = newPath;
     }
     return Route;
 
@@ -350,6 +360,7 @@ var Jade = (function () {
         if (route && this.currentRoute != route.path) {
 
             this.currentRoute = route.path;
+            this.router.setCurrentRoute(route)
             var component = this.getCurrentComponentByName(route.component);
             this.injectServices(component);
             component.rootSelector = this.selector;
@@ -369,10 +380,12 @@ var Jade = (function () {
     }
 
     Jade.prototype.getCurrentRoute = function () {
+        var that = this;
         var route = this.router.routes.filter(function (r) {
             var isRouteHaveParam = r.checkForParam();
             if (isRouteHaveParam) {
-                r.path = r.getBasePath();
+                that.router.setParams(route);
+                r.setBasePath(that.router.params);
             }
             return location.href == r.path
         })[0];
