@@ -1,5 +1,8 @@
 var Router = (function () {
-
+ /**
+ * @function
+ * @param {Array[object]} routes - Array of objects that have url and component name as string
+ */
     function Router(routes) {
         this.routes = [];
         this.currentRoute = null;
@@ -16,14 +19,28 @@ var Router = (function () {
         }
     }
 
-    Router.prototype.setCurrentRoute = function(route){
+    Router.prototype.setCurrentRoute = function (route) {
         this.currentRoute = route;
     }
 
-    Router.prototype.setParams = function(prefix){
-        var parts = location.hash.split('/')
-        var query = parts[parts.length -1]
-        this.params[prefix] = parseInt(query);
+    Router.prototype.setParams = function (prefix) {
+        var parts = location.href.split('/')
+        var query = parts[parts.length - 1]
+
+        if(!Object.keys(this.params)[0]){
+            this.params[prefix] = parseInt(query);
+        }
+        else{
+            var key = Object.keys(this.params)[0];
+            this.params[key] = parseInt(query);
+        }
+    }
+ /**
+ * @function
+ * @param {string} url - redirect to hash url string
+ */
+    Router.prototype.redirect = function(url){
+        location.hash = url;
     }
 
     return Router;
@@ -41,18 +58,38 @@ var Route = (function () {
         if (this.path.indexOf("?") > -1) {
             return true;
         }
+        var lastElement= this.path.split('/');
+        // 5 is because standart url have
+        var lastElementIndex = 5;
+        if(lastElement[lastElementIndex]){
+            return true;
+        }
+        return false;
     }
 
     Route.prototype.setBasePath = function (params) {
         var prefix = this.getRoutePrefix();
-        var newPath = this.path.replace("?"+prefix,params[prefix]);
+        var newPath = this.path.replace("?" + prefix, params[prefix]);
         this.path = newPath;
     }
 
-    Route.prototype.getRoutePrefix = function(){
-        var prefix = this.path.split("?");
-        prefix = prefix[prefix.length-1];
-        return prefix; 
+    Route.prototype.getRoutePrefix = function () {
+        var prefixChar = "?";
+        if(this.path.indexOf("?") < 0){
+           prefixChar = '/'
+           if(this.path != location.href){
+            var prefix =  location.href.split(prefixChar);
+            prefix = prefix[prefix.length - 1];
+            
+            return prefix;
+           }
+
+        }else{
+            var prefix =  this.path.split(prefixChar);
+            prefix = prefix[prefix.length - 1];
+            return prefix;
+        }
+       
     }
 
     return Route;
@@ -66,14 +103,16 @@ var ViewEngine = (function () {
         this.modelSelector = '[jmodel]'
         this.bindSelector = '[jbind]';
         this.repeaterSelector = '[jfor]';
-        this.viewModelSelector = "[jvm]"
-        this.ifStatmentsSelector = "[jif]"
+        this.viewModelSelector = "[jvm]";
+        this.ifStatmentsSelector = "[jif]";
+        this.clickSelector = "[jclick]";
 
         this.inputElements = document.querySelectorAll(this.modelSelector);
         this.boundElements = document.querySelectorAll(this.bindSelector);
         this.repeatElements = document.querySelectorAll(this.repeaterSelector);
         this.viewModelElements = document.querySelectorAll(this.viewModelSelector)
         this.ifStatemetnsElements = document.querySelectorAll(this.ifStatmentsSelector)
+        this.clickElements = document.querySelectorAll(this.clickSelector)
         this.scope = scope;
     }
 
@@ -110,6 +149,13 @@ var ViewEngine = (function () {
 
         }
 
+        for (var el of this.clickElements) {
+            var propName = el.getAttribute('jclick');
+
+            this.setPropUpdateLogic(propName);
+
+        }
+
         return this.scope;
     }
 
@@ -126,7 +172,8 @@ var ViewEngine = (function () {
                     that.setBindValue(newValue, prop);
                     that.setRepeaterValue(newValue, prop);
                     that.setViewModelValue(newValue, prop);
-                    that.setIfStatementValue(prop)
+                    that.setClickValue(newValue, prop);
+                    that.setIfStatementValue(prop);
 
                 },
                 get: function () {
@@ -134,6 +181,17 @@ var ViewEngine = (function () {
                 },
                 enumerable: true
             })
+        }
+    }
+
+    ViewEngine.prototype.setClickValue= function(newValue,prop){
+        // Set input elements to new value
+        for (var el of this.clickElements) {
+            if (el.getAttribute('jclick') === prop) {
+                if (typeof newValue === "function") {
+                    el.addEventListener("click", newValue);
+                }
+            }
         }
     }
 
@@ -173,6 +231,8 @@ var ViewEngine = (function () {
                             var current = a[j];
                             var regex = '{' + prop + '.' + j + '}'
                             templateRow = templateRow.replace(regex, current)
+                            var property = {name : prop, prefix : j};
+                            templateRow = this.setRepeaterAttributesValues(templateRow,current,property)
                         }
                         result += templateRow
                     }
@@ -181,6 +241,14 @@ var ViewEngine = (function () {
             }
         }
     }
+
+    ViewEngine.prototype.setRepeaterAttributesValues = function(templateRow, value, property){
+        var regex = '{' + property.name + '.' + property.prefix + '}'
+        templateRow = templateRow.replace(regex, value)   
+
+        return templateRow;
+    }
+
 
     ViewEngine.prototype.setViewModelValue = function (newValue, prop) {
         // Set object values or normal value and repeat html
@@ -192,6 +260,11 @@ var ViewEngine = (function () {
                         var current = newValue[i];
                         var regex = '{' + prop + '.' + i + '}'
                         templateRow = templateRow.replace(regex, current)
+                        for(var att in el.attributes){
+                            if(el.attributes[att].nodeValue){
+                             el.attributes[att].nodeValue = el.attributes[att].nodeValue.replace(regex, current)
+                            }
+                         }
                     }
                     el.innerHTML = templateRow;
                 } else {
@@ -199,10 +272,16 @@ var ViewEngine = (function () {
                     var regex = '{' + prop + '}'
                     templateRow = templateRow.replace(regex, newValue)
                     el.innerHTML = templateRow;
-                }
+                    for(var att in el.attributes){
+                        if(el.attributes[att].nodeValue){
+                         el.attributes[att].nodeValue = el.attributes[att].nodeValue.replace(regex, newValue)
+                        }
+                     }
+                }    
             }
         }
     }
+
 
     ViewEngine.prototype.setIfStatementValue = function (prop) {
         var that = this;
@@ -212,7 +291,6 @@ var ViewEngine = (function () {
                     var attribute = el.getAttribute('jif');
                     var props = getScopePropertyFromExpression(attribute);
                     var expression = replaceExpression(props, attribute);
-                    console.log(that.scope)
                     var evalCondition = eval(expression);
 
                     if (evalCondition === true || typeof evalCondition === 'object') {
@@ -250,6 +328,7 @@ var ViewEngine = (function () {
     return ViewEngine;
 
 }());
+
 
 var Component = (function () {
 
@@ -336,7 +415,11 @@ var Component = (function () {
 }());
 
 var Jade = (function () {
-
+/**
+* @property {object} options  - Jade app options
+* @property {string} options.selector  - Element selector 
+* @property {Router} options.router - Router 
+*/
     function Jade(options) {
         this.selector = options.selector;
         this.router = options.router;
@@ -346,6 +429,16 @@ var Jade = (function () {
         this.init();
     }
 
+/**
+ * @function
+ * @param {string} name - Component name
+ * @property {object} options  - Component options
+ * @property {string} options.selector  - Element selector for component
+ * @property {string} options.templateUrl - Local path to .html file
+ * @property {string} options.template - Render html directly from component
+ * @property {function} options.componentClass - Component class function which is the main executeble function of the component
+ * @property {Array[string]} options.services - Array of Service dependencies called by name of the service. 
+ */
     Jade.prototype.component = function (name, component) {
         this.components.push({
             name: name,
@@ -353,6 +446,12 @@ var Jade = (function () {
         });
     }
 
+    /**
+ * @function
+ * @param {string} name - Service name
+ * @param {object} options - Service name
+ * @property {function} service.serviceClass - Service class function which is the main executeble function of the service
+ */
     Jade.prototype.service = function (name, service) {
         this.services.push({
             name: name,
@@ -362,6 +461,12 @@ var Jade = (function () {
 
     Jade.prototype.configComponent = function () {
         var route = this.getCurrentRoute();
+        var isRouteHaveParam = route.checkForParam();
+        if (isRouteHaveParam) {
+            var prefix = route.getRoutePrefix();
+            this.router.setParams(prefix);
+            route.setBasePath(this.router.params);
+        }
 
         if (route && this.currentRoute != route.path) {
 
@@ -386,15 +491,13 @@ var Jade = (function () {
     }
 
     Jade.prototype.getCurrentRoute = function () {
-        var that = this;
         var route = this.router.routes.filter(function (r) {
-            var isRouteHaveParam = r.checkForParam();
-            if (isRouteHaveParam) {
-                var prefix = r.getRoutePrefix();
-                that.router.setParams(prefix);
-                r.setBasePath(that.router.params);
+            
+            var locationUrl = location.hash.split("/")[1]
+            var path = r.path.split('/#/')[1];
+            if(path.indexOf(locationUrl) > -1){
+                return r.path;
             }
-            return location.href == r.path
         })[0];
 
         return route;
