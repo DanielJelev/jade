@@ -233,7 +233,9 @@ function DetailsComponent(scope, UserService){
 
 ### Development
 
-Want to contribute? Great! Contact me on danieljelev93@gmail.com for more info.
+Want to contribute? Great! 
+You can check my github https://github.com/DanielJelev/jade or...
+Contact me on danieljelev93@gmail.com for more info.
 
 
 License

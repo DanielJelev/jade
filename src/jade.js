@@ -1,8 +1,8 @@
 var Router = (function () {
- /**
- * @function
- * @param {Array[object]} routes - Array of objects that have url and component name as string
- */
+    /**
+    * @function
+    * @param {Array[object]} routes - Array of objects that have url and component name as string
+    */
     function Router(routes) {
         this.routes = [];
         this.currentRoute = null;
@@ -27,19 +27,19 @@ var Router = (function () {
         var parts = location.href.split('/')
         var query = parts[parts.length - 1]
 
-        if(!Object.keys(this.params)[0]){
+        if (!Object.keys(this.params)[0]) {
             this.params[prefix] = parseInt(query);
         }
-        else{
+        else {
             var key = Object.keys(this.params)[0];
             this.params[key] = parseInt(query);
         }
     }
- /**
- * @function
- * @param {string} url - redirect to hash url string
- */
-    Router.prototype.redirect = function(url){
+    /**
+    * @function
+    * @param {string} url - redirect to hash url string
+    */
+    Router.prototype.redirect = function (url) {
         location.hash = url;
     }
 
@@ -58,10 +58,10 @@ var Route = (function () {
         if (this.path.indexOf("?") > -1) {
             return true;
         }
-        var lastElement= this.path.split('/');
+        var lastElement = this.path.split('/');
         // 5 is because standart url have
         var lastElementIndex = 5;
-        if(lastElement[lastElementIndex]){
+        if (lastElement[lastElementIndex]) {
             return true;
         }
         return false;
@@ -75,21 +75,21 @@ var Route = (function () {
 
     Route.prototype.getRoutePrefix = function () {
         var prefixChar = "?";
-        if(this.path.indexOf("?") < 0){
-           prefixChar = '/'
-           if(this.path != location.href){
-            var prefix =  location.href.split(prefixChar);
-            prefix = prefix[prefix.length - 1];
-            
-            return prefix;
-           }
+        if (this.path.indexOf("?") < 0) {
+            prefixChar = '/'
+            if (this.path != location.href) {
+                var prefix = location.href.split(prefixChar);
+                prefix = prefix[prefix.length - 1];
 
-        }else{
-            var prefix =  this.path.split(prefixChar);
+                return prefix;
+            }
+
+        } else {
+            var prefix = this.path.split(prefixChar);
             prefix = prefix[prefix.length - 1];
             return prefix;
         }
-       
+
     }
 
     return Route;
@@ -126,6 +126,7 @@ var ViewEngine = (function () {
                 // Update bound scope property on input change
                 el.addEventListener('keyup', e => {
                     this.scope[propName] = el.value;
+                    console.log(el.value)
                 });
 
                 // Set property update logic
@@ -164,6 +165,8 @@ var ViewEngine = (function () {
             var value;
             var that = this;
 
+           
+
             Object.defineProperty(this.scope, prop, {
                 // Automatically update bound dom elements when a scope property is set to a new value
                 set: function (newValue) {
@@ -184,11 +187,13 @@ var ViewEngine = (function () {
         }
     }
 
-    ViewEngine.prototype.setClickValue= function(newValue,prop){
+    ViewEngine.prototype.setClickValue = function (newValue, prop) {
+
         // Set input elements to new value
         for (var el of this.clickElements) {
-            if (el.getAttribute('jclick') === prop) {
-                if (typeof newValue === "function") {
+
+            if (el.attributes['jclick'].nodeValue === prop) {
+                if (typeof newValue === "function") {  
                     el.addEventListener("click", newValue);
                 }
             }
@@ -231,8 +236,8 @@ var ViewEngine = (function () {
                             var current = a[j];
                             var regex = '{' + prop + '.' + j + '}'
                             templateRow = templateRow.replace(regex, current)
-                            var property = {name : prop, prefix : j};
-                            templateRow = this.setRepeaterAttributesValues(templateRow,current,property)
+                            var property = { name: prop, prefix: j };
+                            templateRow = this.setRepeaterAttributesValues(templateRow, current, property)
                         }
                         result += templateRow
                     }
@@ -242,9 +247,9 @@ var ViewEngine = (function () {
         }
     }
 
-    ViewEngine.prototype.setRepeaterAttributesValues = function(templateRow, value, property){
+    ViewEngine.prototype.setRepeaterAttributesValues = function (templateRow, value, property) {
         var regex = '{' + property.name + '.' + property.prefix + '}'
-        templateRow = templateRow.replace(regex, value)   
+        templateRow = templateRow.replace(regex, value)
 
         return templateRow;
     }
@@ -260,11 +265,11 @@ var ViewEngine = (function () {
                         var current = newValue[i];
                         var regex = '{' + prop + '.' + i + '}'
                         templateRow = templateRow.replace(regex, current)
-                        for(var att in el.attributes){
-                            if(el.attributes[att].nodeValue){
-                             el.attributes[att].nodeValue = el.attributes[att].nodeValue.replace(regex, current)
+                        for (var att in el.attributes) {
+                            if (el.attributes[att].nodeValue) {
+                                el.attributes[att].nodeValue = el.attributes[att].nodeValue.replace(regex, current)
                             }
-                         }
+                        }
                     }
                     el.innerHTML = templateRow;
                 } else {
@@ -272,12 +277,12 @@ var ViewEngine = (function () {
                     var regex = '{' + prop + '}'
                     templateRow = templateRow.replace(regex, newValue)
                     el.innerHTML = templateRow;
-                    for(var att in el.attributes){
-                        if(el.attributes[att].nodeValue){
-                         el.attributes[att].nodeValue = el.attributes[att].nodeValue.replace(regex, newValue)
+                    for (var att in el.attributes) {
+                        if (el.attributes[att].nodeValue) {
+                            el.attributes[att].nodeValue = el.attributes[att].nodeValue.replace(regex, newValue)
                         }
-                     }
-                }    
+                    }
+                }
             }
         }
     }
@@ -340,16 +345,28 @@ var Component = (function () {
         this.services = options.services;
         this.servicesClasses = [];
         this.scope = {}
+        this.isChildComponent = false;
         this.rootSelector;
+
     }
 
     Component.prototype.setTemplate = function () {
         var element = document.getElementsByTagName(this.rootSelector)[0];
-
         if (this.selector) {
-            var template = document.createElement(this.selector);
-            template.innerHTML = this.template;
-            element.innerHTML = template.innerHTML;
+            var template;
+            if(element.innerHTML.indexOf(this.selector) > -1){
+                template = document.querySelector(this.selector);
+            }else{
+                template = document.createElement(this.selector);
+            }
+
+            if(this.isChildComponent){
+                template.innerHTML += this.template;
+            }else{
+                template.innerHTML += this.template;
+                element.appendChild(template);
+            }
+           
         } else {
             element.innerHTML = this.template;
         }
@@ -361,17 +378,23 @@ var Component = (function () {
     }
 
     Component.prototype.config = function () {
-        if (this.templateUrl) {
-            var that = this;
-            this.loadTemplateUrl().then(function (template) {
-                that.template = template;
+        var that = this;
+
+        return new Promise(function (resolve, reject) {
+            if (that.templateUrl) {
+                that.loadTemplateUrl().then(function (template) {
+                    that.template = template;
+                    that.setTemplate();
+                    that.setUpComponent();
+                    resolve();
+                });
+            } else {
                 that.setTemplate();
                 that.setUpComponent();
-            });
-        } else {
-            this.setTemplate();
-            this.setUpComponent();
-        }
+                resolve();
+            }
+        });
+
 
     }
 
@@ -415,30 +438,31 @@ var Component = (function () {
 }());
 
 var Jade = (function () {
-/**
-* @property {object} options  - Jade app options
-* @property {string} options.selector  - Element selector 
-* @property {Router} options.router - Router 
-*/
+    /**
+    * @property {object} options  - Jade app options
+    * @property {string} options.selector  - Element selector 
+    * @property {Router} options.router - Router 
+    */
     function Jade(options) {
         this.selector = options.selector;
         this.router = options.router;
         this.currentRoute = null;
         this.components = [];
         this.services = [];
+        this.currentComponent = null;
         this.init();
     }
 
-/**
- * @function
- * @param {string} name - Component name
- * @property {object} options  - Component options
- * @property {string} options.selector  - Element selector for component
- * @property {string} options.templateUrl - Local path to .html file
- * @property {string} options.template - Render html directly from component
- * @property {function} options.componentClass - Component class function which is the main executeble function of the component
- * @property {Array[string]} options.services - Array of Service dependencies called by name of the service. 
- */
+    /**
+     * @function
+     * @param {string} name - Component name
+     * @property {object} options  - Component options
+     * @property {string} options.selector  - Element selector for component
+     * @property {string} options.templateUrl - Local path to .html file
+     * @property {string} options.template - Render html directly from component
+     * @property {function} options.componentClass - Component class function which is the main executeble function of the component
+     * @property {Array[string]} options.services - Array of Service dependencies called by name of the service. 
+     */
     Jade.prototype.component = function (name, component) {
         this.components.push({
             name: name,
@@ -460,6 +484,7 @@ var Jade = (function () {
     }
 
     Jade.prototype.configComponent = function () {
+        var that = this;
         var route = this.getCurrentRoute();
         var isRouteHaveParam = route.checkForParam();
         if (isRouteHaveParam) {
@@ -475,7 +500,34 @@ var Jade = (function () {
             var component = this.getCurrentComponentByName(route.component);
             this.injectServices(component);
             component.rootSelector = this.selector;
-            component.config();
+            component.config().then(function () {
+                that.setCurrentComponentSelector(component);
+                that.configInnerComponents(component)
+            });
+        }
+    }
+
+    Jade.prototype.setCurrentComponentSelector = function(component){
+        if(component.selector){
+            this.currentComponent = component.selector;
+        }else{
+            this.currentComponent = this.selector;
+        }
+    }
+
+    Jade.prototype.configInnerComponents = function (component) {
+        var that = this;
+        for (var comp in this.components) {
+            var component = this.components[comp].component;
+            var selectedComponent = document.querySelectorAll(component.selector);
+            if (selectedComponent.length > 0 && that.currentComponent != component.selector) {
+                this.injectServices(component);
+                component.rootSelector = that.currentComponent;
+                component.isChildComponent = true;
+                component.config().then(function () {
+
+                });
+            }
         }
     }
 
@@ -492,10 +544,10 @@ var Jade = (function () {
 
     Jade.prototype.getCurrentRoute = function () {
         var route = this.router.routes.filter(function (r) {
-            
+
             var locationUrl = location.hash.split("/")[1]
             var path = r.path.split('/#/')[1];
-            if(path.indexOf(locationUrl) > -1){
+            if (path.indexOf(locationUrl) > -1) {
                 return r.path;
             }
         })[0];
@@ -535,8 +587,15 @@ var Jade = (function () {
     Jade.prototype.observeRouteChanges = function () {
         var that = this;
         window.addEventListener("hashchange", function () {
+            that.resetPageState();
             that.configComponent();
+            
         });
+    }
+
+    Jade.prototype.resetPageState = function(){
+        var root = document.getElementsByTagName(this.selector)[0];
+        root.innerHTML = '';
     }
 
     return Jade
