@@ -7,10 +7,10 @@ var Router = (function () {
         this.routes = [];
         this.currentRoute = null;
         this.params = {};
-        this.config(routes)
+        this._config(routes)
     }
 
-    Router.prototype.config = function (routerConfig) {
+    Router.prototype._config = function (routerConfig) {
         for (var r in routerConfig) {
             this.routes.push(new Route(
                 routerConfig[r].url,
@@ -19,11 +19,11 @@ var Router = (function () {
         }
     }
 
-    Router.prototype.setCurrentRoute = function (route) {
+    Router.prototype._setCurrentRoute = function (route) {
         this.currentRoute = route;
     }
 
-    Router.prototype.setParams = function (prefix) {
+    Router.prototype._setParams = function (prefix) {
         var parts = location.href.split('/')
         var query = parts[parts.length - 1]
 
@@ -54,7 +54,7 @@ var Route = (function () {
         this.component = component;
     }
 
-    Route.prototype.checkForParam = function () {
+    Route.prototype._checkForParam = function () {
         if (this.path.indexOf("?") > -1) {
             return true;
         }
@@ -67,13 +67,13 @@ var Route = (function () {
         return false;
     }
 
-    Route.prototype.setBasePath = function (params) {
-        var prefix = this.getRoutePrefix();
+    Route.prototype._setBasePath = function (params) {
+        var prefix = this._getRoutePrefix();
         var newPath = this.path.replace("?" + prefix, params[prefix]);
         this.path = newPath;
     }
 
-    Route.prototype.getRoutePrefix = function () {
+    Route.prototype._getRoutePrefix = function () {
         var prefixChar = "?";
         if (this.path.indexOf("?") < 0) {
             prefixChar = '/'
@@ -89,7 +89,6 @@ var Route = (function () {
             prefix = prefix[prefix.length - 1];
             return prefix;
         }
-
     }
 
     return Route;
@@ -116,7 +115,7 @@ var ViewEngine = (function () {
         this.scope = scope;
     }
 
-    ViewEngine.prototype.configScope = function () {
+    ViewEngine.prototype._configScope = function () {
 
         for (var el of this.inputElements) {
             if (el.type === 'text') {
@@ -147,14 +146,11 @@ var ViewEngine = (function () {
         for (var el of this.ifStatemetnsElements) {
             var propName = el.getAttribute('jif');
             this.setPropUpdateLogic(propName);
-
         }
 
         for (var el of this.clickElements) {
             var propName = el.getAttribute('jclick');
-
             this.setPropUpdateLogic(propName);
-
         }
 
         return this.scope;
@@ -164,9 +160,6 @@ var ViewEngine = (function () {
         if (!this.scope.hasOwnProperty(prop)) {
             var value;
             var that = this;
-
-           
-
             Object.defineProperty(this.scope, prop, {
                 // Automatically update bound dom elements when a scope property is set to a new value
                 set: function (newValue) {
@@ -193,7 +186,7 @@ var ViewEngine = (function () {
         for (var el of this.clickElements) {
 
             if (el.attributes['jclick'].nodeValue === prop) {
-                if (typeof newValue === "function") {  
+                if (typeof newValue === "function") {
                     el.addEventListener("click", newValue);
                 }
             }
@@ -350,59 +343,55 @@ var Component = (function () {
 
     }
 
-    Component.prototype.setTemplate = function () {
+    Component.prototype._setTemplate = function () {
         var element = document.getElementsByTagName(this.rootSelector)[0];
         if (this.selector) {
             var template;
-            if(element.innerHTML.indexOf(this.selector) > -1){
+            if (element.innerHTML.indexOf(this.selector) > -1) {
                 template = document.querySelector(this.selector);
-            }else{
+            } else {
                 template = document.createElement(this.selector);
             }
 
-            if(this.isChildComponent){
+            if (this.isChildComponent) {
                 template.innerHTML += this.template;
-            }else{
+            } else {
                 template.innerHTML += this.template;
                 element.appendChild(template);
             }
-           
+
         } else {
             element.innerHTML = this.template;
         }
 
     }
 
-    Component.prototype.injectServices = function (services) {
+    Component.prototype._injectServices = function (services) {
         this.servicesClasses = services;
     }
 
-    Component.prototype.config = function () {
+    Component.prototype._config = function () {
         var that = this;
 
         return new Promise(function (resolve, reject) {
             if (that.templateUrl) {
-                that.loadTemplateUrl().then(function (template) {
+                that._loadTemplateUrl().then(function (template) {
                     that.template = template;
-                    that.setTemplate();
-                    that.setUpComponent();
+                    that._setTemplate();
                     resolve();
                 });
             } else {
-                that.setTemplate();
-                that.setUpComponent();
+                that._setTemplate();
                 resolve();
             }
         });
-
-
     }
 
-    Component.prototype.setUpComponent = function () {
+    Component.prototype._setUpComponent = function () {
         this.scope = {}
 
         var viewEngine = new ViewEngine(this.scope);
-        var scope = viewEngine.configScope();
+        var scope = viewEngine._configScope();
 
         var componentArgs = [scope]
         componentArgs = componentArgs.concat(this.servicesClasses)
@@ -410,7 +399,7 @@ var Component = (function () {
         this.componentClass.apply(null, componentArgs)
     }
 
-    Component.prototype.loadTemplateUrl = function (e) {
+    Component.prototype._loadTemplateUrl = function (e) {
         var that = this;
         return new Promise(function (resolve, reject) {
             var req = new XMLHttpRequest();
@@ -437,6 +426,127 @@ var Component = (function () {
 
 }());
 
+var Module = (function () {
+
+    function Module(options) {
+        this.router = new Router(options.router);
+        this.componentsName = options.components;
+        this.initComponents = [];
+        this.initServices = [];
+        this.components = [];
+        this.services = [];
+        this.currentComponent = null;
+        this.selector = null;
+        this.isInitialized = false;
+    }
+
+    Module.prototype._injectComponents = function () {
+        var that = this;
+        this.initComponents.forEach(function (component) {
+            if (that.componentsName.indexOf(component.name) > -1) {
+                that.components.push(component)
+            }
+        })
+    }
+
+    Module.prototype._configComponent = function () {
+        var that = this;
+        var route = this._getCurrentRoute();
+        var isRouteHaveParam = route._checkForParam();
+        if (isRouteHaveParam) {
+            var prefix = route._getRoutePrefix();
+            this.router._setParams(prefix);
+            route._setBasePath(this.router.params);
+        }
+
+        if (route && this.currentRoute != route.path) {
+
+            this.currentRoute = route.path;
+            this.router._setCurrentRoute(route)
+            var component = this._getCurrentComponentByName(route.component);
+            this._injectServices(component);
+            component.rootSelector = this.selector;
+            component._config().then(function () {
+                that._setCurrentComponentSelector(component);
+                that._configInnerComponents(component)
+                component._setUpComponent();
+            });
+        }
+
+    }
+
+    Module.prototype._getCurrentRoute = function () {
+        var route = this.router.routes.filter(function (r) {
+            var locationUrl = location.hash.split("/")[1]
+            var path = r.path.split('/#/')[1];
+            if (path.indexOf(locationUrl) > -1) {
+                return r.path;
+            }
+        })[0];
+
+        return route;
+    }
+
+    Module.prototype._getCurrentComponentByName = function (componentName) {
+        var component = this.components.filter(function (component) {
+            return componentName == component.name;
+        })[0].component;
+
+        return component;
+    }
+
+    Module.prototype._injectServices = function (component) {
+
+        var services = this.initServices.filter(function (item) {
+            if (component.services != null && component.services.indexOf(item.name) != -1) {
+                return item.service
+            }
+        }).map(s => s = s.service());
+
+        component._injectServices(services);
+    }
+
+    Module.prototype._setCurrentComponentSelector = function (component) {
+        if (component.selector) {
+            this.currentComponent = component.selector;
+        } else {
+            this.currentComponent = this.selector;
+        }
+    }
+
+    Module.prototype._configInnerComponents = function (component) {
+        var that = this;
+        for (var comp in this.components) {
+            var component = this.components[comp].component;
+            var selectedComponent = document.querySelectorAll(component.selector);
+            if (selectedComponent.length > 0 && that.currentComponent != component.selector) {
+                this._injectServices(component);
+                component.rootSelector = that.currentComponent;
+                component.isChildComponent = true;
+                component._config().then(function () {
+                    component._setUpComponent();
+                });
+            }
+        }
+    }
+
+    Module.prototype._config = function (obj) {
+        this.initComponents = obj.components;
+        this.initServices = obj.services;
+        this.selector = obj.selector;
+        if (this.isInitialized === false) {
+
+            this._injectComponents()
+        }
+        this._getCurrentRoute();
+        this._configComponent();
+        this.isInitialized = true;
+    }
+
+    return Module;
+
+}());
+
 var Jade = (function () {
     /**
     * @property {object} options  - Jade app options
@@ -445,12 +555,13 @@ var Jade = (function () {
     */
     function Jade(options) {
         this.selector = options.selector;
-        this.router = options.router;
+        this.router = null;
         this.currentRoute = null;
+        this.modules = [];
         this.components = [];
         this.services = [];
         this.currentComponent = null;
-        this.init();
+        this._config();
     }
 
     /**
@@ -471,11 +582,24 @@ var Jade = (function () {
     }
 
     /**
- * @function
- * @param {string} name - Service name
- * @param {object} options - Service name
- * @property {function} service.serviceClass - Service class function which is the main executeble function of the service
- */
+    * @function
+    * @param {string} name - Module name
+    * @property {object} options  - Module options
+    * @property {Array[string]} options.components - Array of Component dependencies loaded in module. 
+    */
+    Jade.prototype.module = function (name, module) {
+        this.modules.push({
+            name: name,
+            module: new Module(module)
+        });
+    }
+
+    /**
+    * @function
+    * @param {string} name - Service name
+    * @param {object} options - Service name
+    * @property {function} service.serviceClass - Service class function which is the main executeble function of the service
+    */
     Jade.prototype.service = function (name, service) {
         this.services.push({
             name: name,
@@ -483,119 +607,57 @@ var Jade = (function () {
         });
     }
 
-    Jade.prototype.configComponent = function () {
-        var that = this;
-        var route = this.getCurrentRoute();
-        var isRouteHaveParam = route.checkForParam();
-        if (isRouteHaveParam) {
-            var prefix = route.getRoutePrefix();
-            this.router.setParams(prefix);
-            route.setBasePath(this.router.params);
-        }
+    Jade.prototype._configModules = function () {
 
-        if (route && this.currentRoute != route.path) {
-
-            this.currentRoute = route.path;
-            this.router.setCurrentRoute(route)
-            var component = this.getCurrentComponentByName(route.component);
-            this.injectServices(component);
-            component.rootSelector = this.selector;
-            component.config().then(function () {
-                that.setCurrentComponentSelector(component);
-                that.configInnerComponents(component)
-            });
-        }
-    }
-
-    Jade.prototype.setCurrentComponentSelector = function(component){
-        if(component.selector){
-            this.currentComponent = component.selector;
-        }else{
-            this.currentComponent = this.selector;
-        }
-    }
-
-    Jade.prototype.configInnerComponents = function (component) {
-        var that = this;
-        for (var comp in this.components) {
-            var component = this.components[comp].component;
-            var selectedComponent = document.querySelectorAll(component.selector);
-            if (selectedComponent.length > 0 && that.currentComponent != component.selector) {
-                this.injectServices(component);
-                component.rootSelector = that.currentComponent;
-                component.isChildComponent = true;
-                component.config().then(function () {
-
+        for (var i in this.modules) {
+            var module = this.modules[i].module;
+            var isCurrentModul = this._isCurrentModuleRoute(module.router);
+            if (isCurrentModul) {
+                module._config({
+                    selector: this.selector,
+                    components: this.components,
+                    services: this.services
                 });
+                this._setCurrentRouter(module.router)
+                return;
             }
         }
     }
 
-    Jade.prototype.injectServices = function (component) {
-
-        var services = this.services.filter(function (item) {
-            if (component.services != null && component.services.indexOf(item.name) != -1) {
-                return item.service
-            }
-        }).map(s => s = s.service());
-
-        component.injectServices(services);
+    Jade.prototype._setCurrentRouter = function (router) {
+        this.router = router;
     }
 
-    Jade.prototype.getCurrentRoute = function () {
-        var route = this.router.routes.filter(function (r) {
-
-            var locationUrl = location.hash.split("/")[1]
-            var path = r.path.split('/#/')[1];
-            if (path.indexOf(locationUrl) > -1) {
-                return r.path;
-            }
-        })[0];
-
-        return route;
-    }
-
-    Jade.prototype.getCurrentComponentByName = function (componentName) {
-        var component = this.components.filter(function (component) {
-            return componentName == component.name;
-        })[0].component;
-
-        return component;
-    }
-
-    Jade.prototype.renderComponent = function () {
-        for (var c in this.components) {
-
-            var selector = this.components[c].component.selector;
-            var component = document.querySelector(selector);
-
-            if (component) {
-                this.components[c].component.injectServices();
-                this.components[c].component.config();
-            }
-        }
-    }
-
-    Jade.prototype.init = function () {
+    Jade.prototype._config = function () {
         var that = this;
         window.onload = function (e) {
-            that.configComponent();
-            that.observeRouteChanges();
+            that._configModules();
+            that._observeRouteChanges();
         }
     }
 
-    Jade.prototype.observeRouteChanges = function () {
+    Jade.prototype._observeRouteChanges = function () {
         var that = this;
         window.addEventListener("hashchange", function () {
-            that.resetPageState();
-            that.configComponent();
-            
+            that._resetPageState();
+            that._configModules();
         });
     }
 
-    Jade.prototype.resetPageState = function(){
+    Jade.prototype._resetPageState = function () {
         var root = document.getElementsByTagName(this.selector)[0];
         root.innerHTML = '';
+    }
+
+    Jade.prototype._isCurrentModuleRoute = function (router) {
+        for (var i in router.routes) {
+            var route = router.routes[i];
+            var locationUrl = location.hash.split("/")[1]
+            var path = route.path.split('/#/')[1];
+            if (path.indexOf(locationUrl) > -1) {
+                return true
+            }
+        }
     }
 
     return Jade
