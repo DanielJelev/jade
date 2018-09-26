@@ -31,6 +31,34 @@ var app = app || {};
 ```
 **Now we have our Jade app...**
 
+
+
+# Creating modules
+**After we created our Jade app, lets create our first module.**
+```javascript
+// Creating new Component
+var baseUrl = "http://localhost:8080/"
+var appRoutes = [
+    {
+        url: baseUrl + "#/",
+        component : "IndexComponent"
+    },
+    {
+        url : baseUrl + "#/home",
+        component : "HomeComponent"
+    }
+];
+
+app.module("MainModule", {
+    components : [
+    "IndexComponent",
+    "HomeComponent"],
+    router : appRoutes
+})
+```
+
+> **This is how we create module. It will load all components which are presented in our component propery. Also we need to present routes which will be resolved by module and load component which are identically  to the route.**
+
 # Creating component
 **After we created our Jade app, lets create our first component.**
 ```javascript
@@ -168,40 +196,21 @@ function HomeService(){
 };
 ```
 > **Creating of service require serviceClass function which is our main function. In this case we need to review all public functions which we want to invoke in out component in return object**.
-# Easy to manage routings
-```javascript
-var app = app || {};
-(function(){
-    var baseUrl = "http:\\localhost:4200"
-    var appRoutes = [{
-            url : baseUrl + "#/home",
-            component : "HomeComponent"
-        }
-    ];
-    var router = new Router(appRoutes);
-    app = new Jade({
-        selector : "my-app",
-        router : router
-    });
-    
-}(app));
-```
+
 # Working with route with query params 
 ```javascript
-var app = app || {};
-(function(){
-    var baseUrl = "http:\\localhost:4200"
-    var appRoutes = [ {
-            url : baseUrl + "#/details/?id",
-            component : "DetailsComponent"
-        }
-    ];
-    var router = new Router(appRoutes);
-    app = new Jade({
-        selector : "my-app",
-        router : router
-    });
-}(app));
+
+var baseUrl = "http:\\localhost:4200"
+var appRoutes = [ {
+        url : baseUrl + "#/details/?id",
+        component : "DetailsComponent"
+    }
+];
+app.module("MainModule", {
+    components : [
+    "DetailsComponent"],
+    router : appRoutes
+})
 ```
 > **Everything after "?" char is query and will be replaced with url value
 Example http://localhost:4200/#/details/1**

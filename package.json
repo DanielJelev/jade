@@ -30,6 +30,7 @@
   "dependencies": {
     "requirejs": "^2.3.5"
   },
+  "keywords" : ["front-end","front", "end","framework","template","router","route","api","component","web","rest","restful","app"],
   "deprecated": false,
   "description": "Lite front-end framework over component pattern.",
   "license": "MIT",
