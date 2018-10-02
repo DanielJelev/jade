@@ -36,7 +36,7 @@ var app = app || {};
 # Creating modules
 **After we created our Jade app, lets create our first module.**
 ```javascript
-// Creating new Component
+// Creating new Module
 var baseUrl = "http://localhost:8080/"
 var appRoutes = [
     {
