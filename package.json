@@ -1,6 +1,6 @@
 {
   "_from": "jadejs",
-  "_id": "jadejs@1.0.4",
+  "_id": "jadejs@1.2.0",
   "_inBundle": false,
   "_integrity": "sha512-9jFLDAlrlSHwf9ITJPnWjuAdlvfooZrrCDs56ZNq+gkOrtnZWHEWwGmxCpIIut/Uebd465Y+uAHTsYn8zZWuKg==",
   "_location": "/jadejs",
@@ -27,9 +27,6 @@
     "name": "Daniel Jelev"
   },
   "bundleDependencies": false,
-  "dependencies": {
-    "requirejs": "^2.3.5"
-  },
   "keywords" : ["front-end","front", "end","framework","template","router","route","api","component","web","rest","restful","app"],
   "deprecated": false,
   "description": "Lite front-end framework over component pattern.",
@@ -39,5 +36,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "1.0.4"
+  "version": "1.2.0"
 }

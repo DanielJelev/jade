@@ -123,9 +123,8 @@ var ViewEngine = (function () {
                 var propName = el.getAttribute('jmodel');
 
                 // Update bound scope property on input change
-                el.addEventListener('keyup', e => {
+                el.addEventListener('keyup', function () {
                     this.scope[propName] = el.value;
-                    console.log(el.value)
                 });
 
                 // Set property update logic
@@ -159,17 +158,17 @@ var ViewEngine = (function () {
     ViewEngine.prototype.setPropUpdateLogic = function (prop) {
         if (!this.scope.hasOwnProperty(prop)) {
             var value;
-            var that = this;
+            var _self = this;
             Object.defineProperty(this.scope, prop, {
                 // Automatically update bound dom elements when a scope property is set to a new value
                 set: function (newValue) {
                     value = newValue;
-                    that.setModeValue(newValue, prop);
-                    that.setBindValue(newValue, prop);
-                    that.setRepeaterValue(newValue, prop);
-                    that.setViewModelValue(newValue, prop);
-                    that.setClickValue(newValue, prop);
-                    that.setIfStatementValue(prop);
+                    _self.setModeValue(newValue, prop);
+                    _self.setBindValue(newValue, prop);
+                    _self.setRepeaterValue(newValue, prop);
+                    _self.setViewModelValue(newValue, prop);
+                    _self.setClickValue(newValue, prop);
+                    _self.setIfStatementValue(prop);
 
                 },
                 get: function () {
@@ -282,7 +281,7 @@ var ViewEngine = (function () {
 
 
     ViewEngine.prototype.setIfStatementValue = function (prop) {
-        var that = this;
+        var _self = this;
         for (var el of this.ifStatemetnsElements) {
             if (el.getAttribute('jif').indexOf(prop) > -1) {
                 if (prop) {
@@ -303,7 +302,7 @@ var ViewEngine = (function () {
 
         function getScopePropertyFromExpression(expression) {
             var properties = [];
-            for (var i in that.scope) {
+            for (var i in _self.scope) {
                 if (expression.indexOf(i) > -1 && expression != i) {
                     properties.push(i)
                 }
@@ -316,7 +315,7 @@ var ViewEngine = (function () {
 
             for (var i in properties) {
                 var currentProp = properties[i];
-                expression = expression.replace(currentProp, "that.scope." + currentProp)
+                expression = expression.replace(currentProp, "_self.scope." + currentProp)
             }
 
             return expression;
@@ -324,6 +323,128 @@ var ViewEngine = (function () {
     }
 
     return ViewEngine;
+
+}());
+
+
+var Http = (function () {
+
+    function Http() {
+
+    }
+    /**
+      * @function
+      * @property {string} url - Request URL
+      * @property {{Array[object]}} headers - Change headers - example [{ name : "Content-Type", value : "application/json"}]
+      */
+    Http.prototype.get = function (url, headers) {
+        return this._base("GET", url, null, headers);
+    }
+
+    /**
+  * @function
+  * @property {string} url - Request URL
+  * @property {string} data - Request data 
+  * @property {{Array[object]}} headers - Change headers - example [{ name : "Content-Type", value : "application/json"}]
+  */
+    Http.prototype.post = function (url, data, headers) {
+        return this._base("POST", url, data, headers);
+    }
+
+    /**
+     * @function
+     * @property {string} url - Request URL
+     * @property {string} data - Request data 
+     * @property {{Array[object]}} headers - Change headers - example [{ name : "Content-Type", value : "application/json"}]
+     */
+    Http.prototype.put = function (url, data, headers) {
+        return this._base("PUT", url, data, headers);
+    }
+
+    /**
+     * @function
+     * @property {string} url - Request URL
+     * @property {string} data - Request data 
+     * @property {{Array[object]}} headers - Change headers - example [{ name : "Content-Type", value : "application/json"}]
+     */
+    Http.prototype.delete = function (url, data, headers) {
+        return this._base("DELETE", url, data, headers);
+    }
+
+
+    Http.prototype._base = function (method, url, data, headers) {
+        var self = this;
+        var promise = new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.open(method, url);
+            xhr = self._setHeaders(xhr, headers);
+            xhr.onload = function () {
+                if (this.status >= 200 && this.status < 300) {
+                    resolve(xhr.response);
+
+                } else {
+                    reject({
+                        status: this.status,
+                        statusText: xhr.statusText
+                    });
+                }
+            };
+            xhr.onerror = function () {
+                reject({
+                    status: this.status,
+                    statusText: xhr.statusText
+                });
+            };
+            xhr.send(data);
+        });
+
+        return promise;
+    }
+
+    Http.prototype._setHeaders = function (xhr, headers) {
+        if (headers != null) {
+            headers.forEach(function (header) {
+                xhr.setRequestHeader(header.name, header.value);
+            })
+        }
+        return xhr;
+    }
+
+    return Http;
+
+}());
+
+
+var Cookie = (function(){
+
+    function Cookie(){
+
+    }
+
+    Cookie.prototype.setCookie = function(cname, cvalue, exdays) {
+        var d = new Date();
+        d.setTime(d.getTime() + (exdays*24*60*60*1000));
+        var expires = "expires="+ d.toUTCString();
+        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+
+    Cookie.prototype.getCookie = function(cname) {
+        var name = cname + "=";
+        var decodedCookie = decodeURIComponent(document.cookie);
+        var ca = decodedCookie.split(';');
+        for(var i = 0; i <ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+                return c.substring(name.length, c.length);
+            }
+        }
+        return "";
+    }
+
+    return Cookie;
 
 }());
 
@@ -336,7 +457,9 @@ var Component = (function () {
         this.template = options.template;
         this.componentClass = options.componentClass;
         this.services = options.services;
+        this.providers = options.providers;
         this.servicesClasses = [];
+        this.providerClasses = [];
         this.scope = {}
         this.isChildComponent = false;
         this.rootSelector;
@@ -370,19 +493,23 @@ var Component = (function () {
         this.servicesClasses = services;
     }
 
+    Component.prototype._injectProviders = function (providers) {
+        this.providerClasses = providers;
+    }
+
     Component.prototype._config = function () {
-        var that = this;
+        var _self = this;
 
         return new Promise(function (resolve, reject) {
-            if (that.templateUrl) {
-                that._loadTemplateUrl().then(function (template) {
-                    that.template = template;
-                    that._setTemplate();
-                    resolve();
+            if (_self.templateUrl) {
+                _self._loadTemplateUrl().then(function (template) {
+                    _self.template = template;
+                    _self._setTemplate();
+                    resolve(_self);
                 });
             } else {
-                that._setTemplate();
-                resolve();
+                _self._setTemplate();
+                resolve(_self);
             }
         });
     }
@@ -395,31 +522,15 @@ var Component = (function () {
 
         var componentArgs = [scope]
         componentArgs = componentArgs.concat(this.servicesClasses)
+        componentArgs = componentArgs.concat(this.providerClasses)
 
         this.componentClass.apply(null, componentArgs)
     }
 
     Component.prototype._loadTemplateUrl = function (e) {
-        var that = this;
-        return new Promise(function (resolve, reject) {
-            var req = new XMLHttpRequest();
-            req.open('GET', that.templateUrl);
-
-            req.onload = function () {
-                if (req.status == 200) {
-                    resolve(req.response);
-                }
-                else {
-                    reject(Error(req.statusText));
-                }
-            };
-
-            req.onerror = function () {
-                reject(Error("Network Error"));
-            };
-
-            req.send();
-        });
+        var http = new Http();
+        var promise = http.get(this.templateUrl);
+        return promise;
     }
 
     return Component;
@@ -435,22 +546,32 @@ var Module = (function () {
         this.initServices = [];
         this.components = [];
         this.services = [];
+        this.providers = [];
         this.currentComponent = null;
         this.selector = null;
         this.isInitialized = false;
     }
 
     Module.prototype._injectComponents = function () {
-        var that = this;
+        var _self = this;
         this.initComponents.forEach(function (component) {
-            if (that.componentsName.indexOf(component.name) > -1) {
-                that.components.push(component)
+            if (_self.componentsName.indexOf(component.name) > -1) {
+                _self.components.push(component)
+            }
+        })
+    }
+
+    Module.prototype._injectProviders = function () {
+        var _self = this;
+        this.initProviders.forEach(function (provider) {
+            if (_self.componentsName.indexOf(component.name) > -1) {
+                _self.components.push(component)
             }
         })
     }
 
     Module.prototype._configComponent = function () {
-        var that = this;
+        var _self = this;
         var route = this._getCurrentRoute();
         var isRouteHaveParam = route._checkForParam();
         if (isRouteHaveParam) {
@@ -465,10 +586,11 @@ var Module = (function () {
             this.router._setCurrentRoute(route)
             var component = this._getCurrentComponentByName(route.component);
             this._injectServices(component);
+            this._injectProviders(component);
             component.rootSelector = this.selector;
             component._config().then(function () {
-                that._setCurrentComponentSelector(component);
-                that._configInnerComponents(component)
+                _self._setCurrentComponentSelector(component);
+                _self._configInnerComponents(component)
                 component._setUpComponent();
             });
         }
@@ -497,13 +619,25 @@ var Module = (function () {
 
     Module.prototype._injectServices = function (component) {
 
+        var _self = this;
         var services = this.initServices.filter(function (item) {
             if (component.services != null && component.services.indexOf(item.name) != -1) {
-                return item.service
+                return item.service;
             }
-        }).map(s => s = s.service());
+        }).map(s => s = s.service.serviceClass.apply(null, _self.providers));
 
         component._injectServices(services);
+    }
+
+    Module.prototype._injectProviders = function (component) {
+
+        var providers = this.providers.filter(function (item) {
+            if (component.providers != null && component.providers.indexOf(item.constructor.name) != -1) {
+                return item
+            }
+        })
+
+        component._injectProviders(providers);
     }
 
     Module.prototype._setCurrentComponentSelector = function (component) {
@@ -515,28 +649,40 @@ var Module = (function () {
     }
 
     Module.prototype._configInnerComponents = function (component) {
-        var that = this;
+        var _self = this;
         for (var comp in this.components) {
             var component = this.components[comp].component;
             var selectedComponent = document.querySelectorAll(component.selector);
-            if (selectedComponent.length > 0 && that.currentComponent != component.selector) {
-                this._injectServices(component);
-                component.rootSelector = that.currentComponent;
-                component.isChildComponent = true;
-                component._config().then(function () {
-                    component._setUpComponent();
-                });
+            if (selectedComponent.length > 0 && _self.currentComponent != component.selector) {
+                _self._initComponent(component, selectedComponent.length)
             }
         }
+    }
+
+    Module.prototype._initComponent = function (component, invokeTimes) {
+        if (invokeTimes == 0) {
+            return;
+        }
+
+        this._injectServices(component);
+        component.rootSelector = this.currentComponent;
+        component.isChildComponent = true;
+        component._config().then(function (comp) {
+            comp._setUpComponent(); 
+        });
+
+        this._initComponent(component, invokeTimes - 1)
+
     }
 
     Module.prototype._config = function (obj) {
         this.initComponents = obj.components;
         this.initServices = obj.services;
         this.selector = obj.selector;
+        this.providers = obj.providers;
         if (this.isInitialized === false) {
 
-            this._injectComponents()
+            this._injectComponents();
         }
         this._getCurrentRoute();
         this._configComponent();
@@ -546,6 +692,34 @@ var Module = (function () {
     return Module;
 
 }());
+
+var Service = (function () {
+
+    function Service(options) {
+        this.serviceClass = options.serviceClass;
+        this.providers = options.providers;
+        this.providerClasses = [];
+    }
+
+    Service.prototype.setProviders = function (providers) {
+        var _self = this;
+        this.providerClasses = providers.filter(function (item) {
+            if (_self.providers != null && _self.providers.indexOf(item.constructor.name) != -1) {
+                return item;
+            }
+        })
+
+        this.injectProviders();
+    }
+
+    Service.prototype.injectProviders = function () {
+        this.serviceClass.apply(null, this.providerClasses);
+    }
+
+
+
+    return Service;
+}())
 
 var Jade = (function () {
     /**
@@ -561,6 +735,8 @@ var Jade = (function () {
         this.components = [];
         this.services = [];
         this.currentComponent = null;
+        this.http = {};
+        this.providers = []
         this._config();
     }
 
@@ -603,7 +779,7 @@ var Jade = (function () {
     Jade.prototype.service = function (name, service) {
         this.services.push({
             name: name,
-            service: service.serviceClass
+            service: new Service(service)
         });
     }
 
@@ -616,7 +792,8 @@ var Jade = (function () {
                 module._config({
                     selector: this.selector,
                     components: this.components,
-                    services: this.services
+                    services: this.services,
+                    providers: this.providers
                 });
                 this._setCurrentRouter(module.router)
                 return;
@@ -629,18 +806,25 @@ var Jade = (function () {
     }
 
     Jade.prototype._config = function () {
-        var that = this;
+        var _self = this;
         window.onload = function (e) {
-            that._configModules();
-            that._observeRouteChanges();
+            _self._configProviders();
+            _self._configModules();
+            _self._observeRouteChanges();
         }
     }
 
+    Jade.prototype._configProviders = function(){
+        this.http = new Http();
+        this.cookie = new Cookie();
+        this.providers = [this.http, this.cookie]
+    }
+
     Jade.prototype._observeRouteChanges = function () {
-        var that = this;
+        var _self = this;
         window.addEventListener("hashchange", function () {
-            that._resetPageState();
-            that._configModules();
+            _self._resetPageState();
+            _self._configModules();
         });
     }
 

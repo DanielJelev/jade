@@ -37,7 +37,7 @@ var app = app || {};
 **After we created our Jade app, lets create our first module.**
 ```javascript
 // Creating new Module
-var baseUrl = "http://localhost:8080/"
+var baseUrl = "http://localhost:4200/"
 var appRoutes = [
     {
         url: baseUrl + "#/",
@@ -174,28 +174,55 @@ function UserComponent(scope) {
  ```
  
 # Invocation of component by selector
- > We can easly invoke whole component in our html everywhere by calling the selector of the component.
+ > We can easly invoke whole component in our html everywhere by calling the selector of the component. This will load whole component class, services and providers functionality required for this component.
 ```html
- <home-component><home-component/>
+ <users><users/>
   ```
 
 # Creating a new injectable service
 
 ```javascript
-app.service("HomeService", {
-    serviceClass : HomeService
+app.service("UserService",{
+    serviceClass : UserService,
+    providers : ["Http", "Cookie"]
 });
-function HomeService(){
-    function getPageTitle(){
-        var title = "Home Page Title";
-        return title;
+function UserService (Http, Cookie){
+    function getUserData(){
+        return Http.get("app/user.json");
     };
     return {
-        getPageTitle : getPageTitle
+        getUserData : getUserData,
     };
 };
 ```
 > **Creating of service require serviceClass function which is our main function. In this case we need to review all public functions which we want to invoke in out component in return object**.
+
+> **We have providers which are comming out of the box for you and can be injected in services and components.**.
+
+# Providers
+-
+# Http
+> **Http provider can be injected in components and services. Helping us to make API requests. Every Http request returning promise as a result**.
+```javascript
+Http.get(url, headerOptions);
+Http.post(url, data, headerOptions);
+Http.put(url, data, headerOptions);
+Http.delete(url, data, headerOptions);
+```
+> **Parameters
+URL - request url as string
+data - POST data which will be sended to API.
+headerOptions - Array of Objects wich help to configure request headers parametes**.
+```javascript
+var headerOptions = [{name : "Content-Type", value : "application/json"}];
+Http.post(url, data, headerOptions);
+```
+# Cookie
+> **Cookie provider can be injected in components and services. Helping us to store and get data from browser cookies**.
+```javascript
+Cookie.setCookie(name, value, exdays) // Set new cookie with name , value and expiration days / time
+Cookie.getCookie(name); // Get cookie by name
+```
 
 # Working with route with query params 
 ```javascript
@@ -215,7 +242,7 @@ app.module("MainModule", {
 > **Everything after "?" char is query and will be replaced with url value
 Example http://localhost:4200/#/details/1**
 
-# How to get and work with url params?
+# How to access and work with url params?
 ```javascript
 app.component("DetailsComponent",{...
 })
